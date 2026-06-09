@@ -57,27 +57,28 @@ class skip_gram_network(torch.nn.Module):
     x = self.layer2(x)
     return x
 
-# Test the result on random words
+# Find words closest to a given word
 def close_words(x, index2word, word2index, vecs, n=5):
   if x not in word2index:
-    print(f"{x} is not contained in the dictionary.")
+    print(f"The word \"{x}\" is not contained in the dictionary.")
     return
   dist = []
   x_vec = vecs[word2index[x]]
   for i in range(len(vecs)):
     dist.append(torch.linalg.vector_norm(vecs[i]-x_vec))
-  _, indices = torch.topk(torch.tensor(dist), k=n, largest=False)
+  _, indices = torch.topk(torch.tensor(dist), k=n+1, largest=False)
+  indices = indices[1:]
   for i in indices:
-    print(index2word[i.item()])
+    print(index2word[i.item()], end=" ")
   return  
 
 #raw_text = open("data/test-text.txt", "r", encoding="utf-8").read() 
 raw_text = open("data/The_Adventures_of_Sherlock_Holmes.txt", "r", encoding="utf-8").read() 
 
 vocab_size = 5000
-context_size = 1
+context_size = 5
 embedding_size = 50
-epochs = 50 
+epochs = 10 
 learning_rate = 0.01
 batch_size = 16
 
@@ -86,12 +87,11 @@ vocab_size = min(len(index2word), vocab_size)
 train_context, train_target = make_training_data(sentences, word2index)
 dataset = torch.utils.data.TensorDataset(torch.tensor(train_context, dtype=torch.long),torch.tensor(train_target, dtype=torch.long))
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
-
 net = skip_gram_network(vocab_size=vocab_size, embedding_size=embedding_size)
 train(net, dataloader, epochs)
-
 vecs = net(torch.tensor(list(range(vocab_size))))
 
-close_words('blood', index2word, word2index, vecs)
+# Play with random words
+close_words('winter', index2word, word2index, vecs) 
 
 
